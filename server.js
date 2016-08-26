@@ -16,23 +16,47 @@ app.get('/', function (req, res) {
 
 // GET /todos
 app.get('/todos', function (req, res) {
-    var queryParams = req.query;  // e.g. /todos?completed=true
-    // note: will receive "true" or "false" as a string, ~bool
-    var filteredTodos = todos;
-    var body = _.pick(req.body, 'description', 'completed');
-    if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
-        filteredTodos = _.where(filteredTodos, {completed: true});
-    } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
-        filteredTodos = _.where(filteredTodos, {completed: false})
+    var query = req.query;
+    console.log(query);
+    var where = {};
+
+    if (query.hasOwnProperty('completed') && query.completed === 'true') {
+        where.completed = true;
+    } else if (query.hasOwnProperty('completed') && query.completed === 'false') {
+        where.completed = false;
     }
 
-    if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
-        filteredTodos = _.filter(filteredTodos, function (todo) {
-            return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) >= 0;
-        });
+    if (query.hasOwnProperty('q') && query.q.length > 0) {
+        where.description = {
+            $like: '%' + query.q + '%'
+        };
     }
+    console.log(where);
+    db.todo.findAll({
+        where: where
+    }).then(function (todos) {
+        res.json(todos);
+    }, function (e) {
+        res.status(500).send();
+    });
 
-    res.json(filteredTodos);  // don't need to use JSON.stringify...
+    // var queryParams = req.query;  // e.g. /todos?completed=true
+    // // note: will receive "true" or "false" as a string, ~bool
+    // var filteredTodos = todos;
+    // var body = _.pick(req.body, 'description', 'completed');
+    // if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
+    //     filteredTodos = _.where(filteredTodos, {completed: true});
+    // } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
+    //     filteredTodos = _.where(filteredTodos, {completed: false})
+    // }
+
+    // if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
+    //     filteredTodos = _.filter(filteredTodos, function (todo) {
+    //         return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) >= 0;
+    //     });
+    // }
+
+    // res.json(filteredTodos);  // don't need to use JSON.stringify...
 })
 
 // GET /todos/:id
@@ -44,8 +68,7 @@ app.get('/todos/:id', function (req, res) {
         } else {
             res.status(404).send();
         }
-    },
-    function (e) {
+    }, function (e) {
         res.status(500).send();
     })
     // var todoId = parseInt(req.params.id, 10);
