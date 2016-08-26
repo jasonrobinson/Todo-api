@@ -15,7 +15,17 @@ app.get('/', function (req, res) {
 
 // GET /todos
 app.get('/todos', function (req, res) {
-    res.json(todos);  // don't need to use JSON.stringify...
+    var queryParams = req.query;  // e.g. /todos?completed=true
+    // note: will receive "true" or "false" as a string, ~bool
+    var filteredTodos = todos;
+    var body = _.pick(req.body, 'description', 'completed');
+    if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
+        filteredTodos = _.where(filteredTodos, {completed: true});
+    } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
+        filteredTodos = _.where(filteredTodos, {completed: false})
+    }
+
+    res.json(filteredTodos);  // don't need to use JSON.stringify...
 })
 
 // GET /todos/:id
