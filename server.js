@@ -3,6 +3,7 @@ var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
 var bcrypt = require('bcrypt');
+var middleware = require('./middleware.js')(db);
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -16,9 +17,8 @@ app.get('/', function (req, res) {
 });
 
 // GET /todos
-app.get('/todos', function (req, res) {
+app.get('/todos', middleware.requireAuthentication, function (req, res) {
     var query = req.query;
-    console.log(query);
     var where = {};
 
     if (query.hasOwnProperty('completed') && query.completed === 'true') {
@@ -32,7 +32,6 @@ app.get('/todos', function (req, res) {
             $like: '%' + query.q + '%'
         };
     }
-    console.log(where);
     db.todo.findAll({
         where: where
     }).then(function (todos) {
@@ -61,7 +60,7 @@ app.get('/todos', function (req, res) {
 })
 
 // GET /todos/:id
-app.get('/todos/:id', function (req, res) {
+app.get('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoId = parseInt(req.params.id, 10);
     db.todo.findById(todoId).then(function (todo) {
         if (!!todo) {
@@ -82,7 +81,7 @@ app.get('/todos/:id', function (req, res) {
     // }
 });
 
-app.post('/todos', function (req, res) {
+app.post('/todos', middleware.requireAuthentication, function (req, res) {
     var body = _.pick(req.body, 'description', 'completed');
 
     // update for sequelize
@@ -109,7 +108,7 @@ app.post('/todos', function (req, res) {
     // res.json(body);
 });
 
-app.delete('/todos/:id', function (req, res) {
+app.delete('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoId = parseInt(req.params.id, 10);
     // db.todo.findById(todoId).then(function(todo) {
     //     if (!!todo) {
@@ -147,7 +146,7 @@ app.delete('/todos/:id', function (req, res) {
 
 });
 
-app.put('/todos/:id', function (req, res) {
+app.put('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoId = parseInt(req.params.id, 10);
     // var matchedTodo = _.findWhere(todos, {id: todoId});
     var body = _.pick(req.body, 'description', 'completed');
