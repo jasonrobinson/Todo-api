@@ -231,15 +231,24 @@ app.post('/users', function(req, res) {
 // route; users resource, login action
 app.post('/users/login', function (req, res) {
     var body = _.pick(req.body, 'email', 'password');
+    var userInstance;
 
     db.user.authenticate(body).then(function (user) {
         var token = user.generateToken('authentication');
-        if (token) {
-            res.header('Auth', token).json(user.toPublicJSON());
-        } else {
-            res.status(401).send();  // don't give good descriptions for login!
-        }
-    }, function () {
+        userInstance = user;
+
+        return db.token.create({
+            token: token
+        });
+
+        // if (token) {
+        //     res.header('Auth', token).json(user.toPublicJSON());
+        // } else {
+        //     res.status(401).send();  // don't give good descriptions for login!
+        // }
+    }).then(function (tokenInstance) {
+        res.header('Auth', tokenInstance.get('token')).json(userInstance.toPublicJSON());
+    }).catch(function () {
         res.status(401).send();  // don't give good descriptions for login!
     });
 
@@ -263,6 +272,14 @@ app.post('/users/login', function (req, res) {
     //     res.status(500).send();
     // });
 });
+
+app.delete('/users/login', middleware.requireAuthentication, function (req, res) {
+    req.token.destroy().then(function () {
+        res.status(204).send();
+    }).catch(function () {
+        res.status(500).send();
+    });
+})
 
 // db.sequelize.sync().then(function () {
 db.sequelize.sync({
