@@ -23,7 +23,7 @@ var Todo = sequelize.define('todo', {
 
 // force: true forces recreate
 sequelize.sync({
-    // force: true
+    force: true
 }).then(function () {
     console.log('Everything is synced');
 
